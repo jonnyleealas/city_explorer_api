@@ -23,12 +23,12 @@ Finish time: 10pm
 Actual time needed to complete: 2hrs
 
 #
-Number and name of feature: ___________________Locations_____________
+Number and name of feature: Errors Alert 
 
-Estimate of time needed to complete: _____
+Estimate of time needed to complete: 2hrs
 
-Start time: _____
+Start time: __6pm___
 
-Finish time: _____
+Finish time: _9pm____
 
-Actual time needed to complete: _____
+Actual time needed to complete: 3hrs
