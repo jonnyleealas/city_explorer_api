@@ -36,7 +36,8 @@ function WeatherObj(obj){
 
 app.get('/weather', (request, response)=>{
   let search_query = request.query.search_query;
-  let url = `https://api.weatherbit.io/v2.0/current?city=${search_query}&key=${process.env.WEATHER_BIT}`;
+  let url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=38.0&lon=-78.0&threshold=63&units=I&key=${process.env.WEATHER_BIT}&q=${search_query}&format=json`;
+  superagent.get(url);
 
   superagent.get(url)
     .then(resultsFromSuperAgent => {
