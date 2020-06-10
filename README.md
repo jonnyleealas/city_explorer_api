@@ -18,9 +18,9 @@ Estimate of time needed to complete: 3hrs
 
 Start time: 8pm
 
-Finish time: _____
+Finish time: 10pm
 
-Actual time needed to complete: _____
+Actual time needed to complete: 2hrs
 
 #
 Number and name of feature: ___________________Locations_____________
