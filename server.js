@@ -1,66 +1,93 @@
-'use stricrt'
+
+'use strict'
+
+
 //express library sets up our server
 const express = require('express');
-//initalizes our exrpess library into our variable called app
-const app = express();
+// tells who is ok to send data to
+const cors = require('cors');
+//this looks for information for us
+const superagent= require('superagent');
 //secret library lets us go into the .env file
 require('dotenv').config();
 
-// tells who is ok to send data to
-const cors = require('cors');
+//initalizes our exrpess library into our variable called app
+const app = express();
 app.use(cors());
-
-app.use(express.static('./public'));
 //bring in the PORT by using process.env.variable name. or 3001 is a debuger.
 const PORT = process.env.PORT || 3001;
+// Locations
+app.get('/location', (request, response) => {
+  let city = request.query.city;
+  let url = `https://us1.locationiq.com/v1/search.php?key=${process.env.LOCATION_IQ}&q=${city}&format=json`;
+  superagent.get(url)
+    .then(resultsFromSuperAgent => {
+      let finalObj = new Location(city, resultsFromSuperAgent.body[0]);
+      response.status(200).send(finalObj);
+    })
+})
 
+
+//weather
+function WeatherObj(obj){
+  this.forecast = obj.weather.description;
+  this.time = obj.valid_date;
+}
+
+app.get('/weather', (request, response)=>{
+  let search_query = request.query.search_query;
+  let url = `https://api.weatherbit.io/v2.0/current?city=${search_query}&key=${process.env.WEATHER_BIT}`;
+
+  superagent.get(url)
+    .then(resultsFromSuperAgent => {
+      let weatherResult = resultsFromSuperAgent.body.data.map(day=>{
+        return new WeatherObj(day);
+      })
+
+      response.status(200).send(weatherResult);
+    }).catch(err => console.log(err));
+})
+app.get('*',(request, response)=> {
+  response.status(404).send('No Route Exists');
+})
 
 app.get('/location',(request, response)=>{
-  console.log(request.query.city);
-  let search_query = request.query.city;
-  let geoData = require('./data/location.json');
-  let returnObj = new Location(search_query, geoData[0]);
+  try{
+    let city = request.query.city;
+    let geoData = require('./data/location.json');
+    let returnObj= new Location (city, geoData[0]);
+    console.log(returnObj);
 
-  response.status(200).send(returnObj);
+    response.status(200).send(returnObj);
+  } catch(err){
+    console.log('error', err);
+    response.status(500).send('sorry, we messed up');
+  }
 })
 
 function Location(searchQuery, obj){
-  this.search_query= searchQuery;
-  this.formatted_query= obj.display_name;
-  this.latitude= obj.lat;
-  this.longitude= obj.lon;
+  this.search_query = searchQuery;
+  this.formatted_query = obj.display_name;
+  this.latitude = obj.lat;
+  this.longitude = obj.lon;
 }
-
-
-app.get('/weather', (request, response)=>{
-  try{
-
-    let weatherArray=[];
-    let weatherData= require('./data/weather.json');
-    weatherData.data.forEach(element =>{
-      new WeatherObj(element, weatherArray);
-    })
-    response.status(200).send(weatherArray);
-  } catch (err) {
-    console.log('ERROR', err);
-    response.status(500).send('sorry, we messed up');
-  }
-
-})
-
-function WeatherObj(obj, arr){
-  this.forecast = obj.weather.description;
-  this.time = obj.valid_date;
-  arr.push(this);
-}
-
-// if it works its
-app.get('*',(request, response)=>{
-
+app.get('*',(request, response)=> {
   response.status(404).send('this route does not exist');
 })
-
-//turn on the lights
-app.listen(PORT,()=>{
-  console.log(`listening on ${PORT}`)
+//weather
+app.get('/weater', (request, response)=> {
+  try{
+    let geoData = require('./date/weater.json')
+    let weatherArray = geoData.data.map(day => {
+      return new WeatherObj(day);
+    })
+    response.status(200).send(weatherArray);
+  } catch(err) {
+    console.log('error', err);
+    response.status(500).send('Sorry Something Went Wrong');
+  }
 })
+
+app.listen(PORT,() =>{
+  console.log(`listening on ${PORT}`)
+});
