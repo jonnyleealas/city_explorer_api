@@ -1,15 +1,6 @@
-  // let returnObj =
-  //   search_query : search_query,
-  //   formatted_query: geoData[0].display_name,
-  //   latitude: geoData[0].lat,
-  //   longitude: geoData[0].lon,
-  // this is a try catch error
-  //try{} catch(err){ consol.log('error',err); response.status(500).send('sorry);}
 
+WEATHER_BIT=55651a58422b49a88530262e339cf300
+//HTTPS: https://api.weatherbit.io/v2.0/current
 
-// app.get('/weather', (request, response)=>{
-//   console.log(request.query.city);
-
-//   let search_query = request.query.city;
-//   let weatherData= require('./data/weather.json');
-//   let returnObj = new Location(search_query, weatherData);
+TRAIL_HIKING=200793087-07bb9584bd3c09c6b601b1526ccafc64
+//https://www.hikingproject.com/data/get-trails?lat=40.0274&lon=-105.2519&maxDistance=10&key=200793087-07bb9584bd3c09c6b601b1526ccafc64
