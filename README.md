@@ -32,3 +32,7 @@ Start time: __6pm___
 Finish time: _9pm____
 
 Actual time needed to complete: 3hrs
+
+
+![Whiteboard 1](img/whiteboard1.png)
+![Whiteboard 2](img/whiteboard2.png)
