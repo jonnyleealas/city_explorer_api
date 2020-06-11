@@ -1,94 +1,122 @@
 
 'use strict'
-
-
-//express library sets up our server
+const superagent = require('superagent')
+// The name of the library that is going to create the server : express
 const express = require('express');
-// tells who is ok to send data to
 const cors = require('cors');
-//this looks for information for us
-const superagent= require('superagent');
-//secret library lets us go into the .env file
+const app = express();
+const pg = require('pg');
+app.use(cors());
+// dotenv lets us get our secrets from our .env file
 require('dotenv').config();
 
-//initalizes our exrpess library into our variable called app
-const app = express();
-app.use(cors());
-//bring in the PORT by using process.env.variable name. or 3001 is a debuger.
+
 const PORT = process.env.PORT || 3001;
-// Locations
+const client = new pg.Client(process.env.DATABASE_URL);
+client.on('error', err => console.error("ERROR first " ,err));
+client.connect();
 app.get('/location', (request, response) => {
-  let city = request.query.city;
-  let url = `https://us1.locationiq.com/v1/search.php?key=${process.env.LOCATION_IQ}&q=${city}&format=json`;
+  let city = request.query.city.toLowerCase().trim();
+  let queryString = `SELECT * FROM locations WHERE search_query = '${city}';`
+
+  client.query(queryString).then((res) => {
+    if (res.rows.length > 0) {
+      let finalObj = new Location(city, res.rows[0]);
+      return response.status(200).send(finalObj);
+    } else {
+      let url = `https://us1.locationiq.com/v1/search.php?key=${process.env.LOCATION_IQ}&q=${city}&format=json`;
+      superagent.get(url).then(resultsFromSuperAgent => {
+        let objectToSave = {
+          search_query: resultsFromSuperAgent.body[0].display_name.split(",")[0].toLowerCase().trim(),
+          formatted_query: resultsFromSuperAgent.body[0].display_name.split(",")[3].toLowerCase().trim(),
+          longitude: resultsFromSuperAgent.body[0].lon,
+          latitude: resultsFromSuperAgent.body[0].lat
+        }
+        let finalObj = new Location(city, objectToSave);
+        /// ...finalobj three dots spread the variables into a thing
+        let safeValues = [finalObj.search_query, finalObj.formatted_query, finalObj.latitude, finalObj.longitude];
+        let sqlQuery = 'INSERT INTO locations (search_query, formatted_query, latitude, longitude) VALUES ($1,$2,$3,$4);';
+        client.query(sqlQuery, safeValues)
+          .then(() => {
+            return response.status(200).send(finalObj);
+          })
+          .catch(e => {
+            throw e;
+          });
+      });
+    }
+  })
+    .catch(err => {
+      throw err;
+    });
+});
+
+
+
+function Location (search_query, obj) {
+  this.search_query = search_query;
+  this.formatted_query = obj.formatted_query;
+  this.latitude = obj.latitude;
+  this.longitude = obj.longitude;
+}
+
+
+//WEATHER
+app.get('/weather', (request, response) => {
+  let search_query = request.query.search_query;
+  let url = `https://api.weatherbit.io/v2.0/forecast/daily?city=${search_query}&key=${process.env.WEATHER_BIT}`;
   superagent.get(url)
     .then(resultsFromSuperAgent => {
-      let finalObj = new Location(city, resultsFromSuperAgent.body[0]);
-      response.status(200).send(finalObj);
-    })
+      let weatherResult = resultsFromSuperAgent.body.data.map(day =>{
+        return new Weather(day);
+      })
+      response.status(200).send(weatherResult);
+    }).catch(err => console.log("ERROR in weather" ,err));
 })
-
-
-//weather
-function WeatherObj(obj){
+function Weather(obj){
   this.forecast = obj.weather.description;
   this.time = obj.valid_date;
+  // array.push(this);
 }
 
-app.get('/weather', (request, response)=>{
-  let search_query = request.query.search_query;
-  let url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=38.0&lon=-78.0&threshold=63&units=I&key=${process.env.WEATHER_BIT}&q=${search_query}&format=json`;
-  superagent.get(url);
 
-  superagent.get(url)
-    .then(resultsFromSuperAgent => {
-      let weatherResult = resultsFromSuperAgent.body.data.map(day=>{
-        return new WeatherObj(day);
+//HIKING
+app.get('/trails', (request, response) => {
+  try{
+    let latitude = request.query.latitude;
+    let longitude = request.query.longitude;
+    let url = `https://www.hikingproject.com/data/get-trails?lat=${latitude}&lon=${longitude}&maxDistance=10&key=${process.env.TRAIL_API_KEY}`;
+    superagent.get(url)
+      .then(resultsFromSuperAgent => {
+        let hikingResults = resultsFromSuperAgent.body.trails.map(hike => new Hiking(hike));
+        response.status(200).send(hikingResults);
+      }).catch(err => {
+        console.log(err)
       })
-
-      response.status(200).send(weatherResult);
-    }).catch(err => console.log(err));
-})
-app.get('*',(request, response)=> {
-  response.status(404).send('No Route Exists');
-})
-
-app.get('/location',(request, response)=>{
-  try{
-    let city = request.query.city;
-    let geoData = require('./data/location.json');
-    let returnObj= new Location (city, geoData[0]);
-    console.log(returnObj);
-
-    response.status(200).send(returnObj);
-  } catch(err){
-    console.log('error', err);
-    response.status(500).send('sorry, we messed up');
-  }
-})
-
-function Location(searchQuery, obj){
-  this.search_query = searchQuery;
-  this.formatted_query = obj.display_name;
-  this.latitude = obj.lat;
-  this.longitude = obj.lon;
-}
-app.get('*',(request, response)=> {
-  response.status(404).send('this route does not exist');
-})
-//weather
-app.get('/weater', (request, response)=> {
-  try{
-    let geoData = require('./date/weater.json')
-    let weatherArray = geoData.data.map(day => {
-      return new WeatherObj(day);
-    })
-    response.status(200).send(weatherArray);
   } catch(err) {
-    console.log('error', err);
-    response.status(500).send('Sorry Something Went Wrong');
+    // console.log("ERROR2 " ,err);
+    response.status(500).send('Not Working!');
   }
 })
+function Hiking(obj) {
+  this.name=obj.name;
+  this.location=obj.location;
+  this.length=obj.length;
+  this.stars=obj.stars;
+  this.star_votes=obj.starVotes;
+  this.summary=obj.summary;
+  this.trail_url=obj.url;
+  this.conditions=`${obj.conditionDetails || ''} ${obj.conditionStatus}`;
+  this.conditions_date=obj.conditionDate.slice(0, obj.conditionDate.indexOf(' '));
+  this.conditions_time=obj.conditionDate.slice(obj.conditionDate.indexOf(' ')+1, obj.conditionDate.length);
+}
 
-app.listen(PORT,() =>{
-  console.log(`listening on ${PORT}`)
-});
+app.get('*', (request, response) => {
+  response.status(404).send('sorry!')
+})
+
+// start the server or turn on the server or calling the server we must do this dont forget to do this dont forget to start port by using app.listen
+app.listen(PORT, () => {
+  console.log(`listening on ${PORT}`);
+
+})
