@@ -13,7 +13,7 @@ require('dotenv').config();
 
 const PORT = process.env.PORT || 3001;
 const client = new pg.Client(process.env.DATABASE_URL);
-client.on('error', err => console.error("ERROR first " ,err));
+client.on('error', err => console.error('ERROR first ' ,err));
 client.connect();
 app.get('/location', (request, response) => {
   let city = request.query.city.toLowerCase().trim();
@@ -27,8 +27,8 @@ app.get('/location', (request, response) => {
       let url = `https://us1.locationiq.com/v1/search.php?key=${process.env.LOCATION_IQ}&q=${city}&format=json`;
       superagent.get(url).then(resultsFromSuperAgent => {
         let objectToSave = {
-          search_query: resultsFromSuperAgent.body[0].display_name.split(",")[0].toLowerCase().trim(),
-          formatted_query: resultsFromSuperAgent.body[0].display_name.split(",")[3].toLowerCase().trim(),
+          search_query: resultsFromSuperAgent.body[0].display_name.split(',')[0].toLowerCase().trim(),
+          formatted_query: resultsFromSuperAgent.body[0].display_name.split(',')[3].toLowerCase().trim(),
           longitude: resultsFromSuperAgent.body[0].lon,
           latitude: resultsFromSuperAgent.body[0].lat
         }
@@ -71,7 +71,7 @@ app.get('/weather', (request, response) => {
         return new Weather(day);
       })
       response.status(200).send(weatherResult);
-    }).catch(err => console.log("ERROR in weather" ,err));
+    }).catch(err => console.log('ERROR in weather' ,err));
 })
 function Weather(obj){
   this.forecast = obj.weather.description;
@@ -86,13 +86,12 @@ app.get('/trails', (request, response) => {
     let latitude = request.query.latitude;
     let longitude = request.query.longitude;
     let url = `https://www.hikingproject.com/data/get-trails?lat=${latitude}&lon=${longitude}&maxDistance=10&key=${process.env.TRAIL_API_KEY}`;
-    superagent.get(url)
-      .then(resultsFromSuperAgent => {
-        let hikingResults = resultsFromSuperAgent.body.trails.map(hike => new Hiking(hike));
-        response.status(200).send(hikingResults);
-      }).catch(err => {
-        console.log(err)
-      })
+    superagent.get(url).then(resultsFromSuperAgent => {
+      let hikingResults = resultsFromSuperAgent.body.trails.map(hike => new Hiking(hike));
+      response.status(200).send(hikingResults);
+    }).catch(e => {
+      console.log(e)
+    })
   } catch(err) {
     // console.log("ERROR2 " ,err);
     response.status(500).send('Not Working!');
@@ -110,6 +109,41 @@ function Hiking(obj) {
   this.conditions_date=obj.conditionDate.slice(0, obj.conditionDate.indexOf(' '));
   this.conditions_time=obj.conditionDate.slice(obj.conditionDate.indexOf(' ')+1, obj.conditionDate.length);
 }
+
+// Movies Route
+app.get('/movies',(request, response) => {
+  try{
+    console.log('/movies');
+    let search_query = request.query.search_query;
+    let url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&query=${search_query}`
+    superagent.get(url)
+
+      .then(resultsFromSuperAgent => {
+        console.log(resultsFromSuperAgent.body);
+        let movieResults = resultsFromSuperAgent.body.results.map(movie => new Movies(movie));
+        console.log(movieResults);
+        response.status(200).send(movieResults);
+      }).catch(err => {
+        console.log(err)
+      })
+  } catch(err) {
+    response.status(500).send('Not Working!');
+  }
+})
+
+
+// Movies constructor
+function Movies(obj){
+  this.title = obj.title;
+  this.overview = obj.overview;
+  this.average_votes = obj.average_votes;
+  this.total_votes = obj.total_votes;
+  this.image_url = obj.image_url;
+  this.popularity = obj.popularity;
+  this.realeased_on = obj.released_on;
+}
+
+
 
 app.get('*', (request, response) => {
   response.status(404).send('sorry!')

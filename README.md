@@ -45,6 +45,19 @@ Finish time: 11pm
 Actual time needed to complete: 9hrs
 
 
+#
+Number and name of feature: Movies and Yelp
+
+Estimate of time needed to complete: 2hr
+
+Start time: 2:30pm
+
+Finish time: 
+
+Actual time needed to complete: 
+
+
 ![Whiteboard 1](img/whiteboard1.png)
 ![Whiteboard 2](img/whiteboard2.png)
 ![Whiteboard 3](img/whiteboard3.png)
+![Whiteboard 4](img/whiteboard4.png)
