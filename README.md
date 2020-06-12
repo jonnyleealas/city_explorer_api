@@ -52,6 +52,17 @@ Estimate of time needed to complete: 2hr
 
 Start time: 2:30pm
 
+Finish time: 7pm
+
+Actual time needed to complete: 5hr
+
+#
+Number and name of feature: Yelp
+
+Estimate of time needed to complete: 2hr
+
+Start time: 7pm
+
 Finish time: 
 
 Actual time needed to complete: 
